@@ -10,6 +10,7 @@ __pycache__/
 data/
 dataset/
 datasets/
+processed_patches_stage4/
 
 # Model weights / outputs
 checkpoints/
@@ -29,3 +30,6 @@ runs/
 # OS files
 Thumbs.db
 .DS_Store
+
+#zip
+*.zip

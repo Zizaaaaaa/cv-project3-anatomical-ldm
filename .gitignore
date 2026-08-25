@@ -11,11 +11,13 @@ data/
 dataset/
 datasets/
 processed_patches_stage4/
+processed_patches_severe/
 
 # Model weights / outputs
 checkpoints/
 weights/
 runs/
+outputs/
 *.pt
 *.pth
 *.ckpt

@@ -6,18 +6,23 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Dataset
+# Datasets / generated data
 data/
 dataset/
 datasets/
 processed_patches_stage4/
 processed_patches_severe/
+processed_patches_severe_guided/
 
-# Model weights / outputs
+# Debug / temporary generated files
+debug_alignment/
+
+# Model weights / training outputs
 checkpoints/
 weights/
 runs/
 outputs/
+
 *.pt
 *.pth
 *.ckpt
@@ -33,5 +38,5 @@ outputs/
 Thumbs.db
 .DS_Store
 
-#zip
+# Archives
 *.zip

@@ -34,12 +34,26 @@ class GuidedSeverePatchDataset(Dataset):
         return len(self.filenames)
 
     def __getitem__(self, idx):
+        import random
+        import torchvision.transforms.functional as TF
+        
         fname = self.filenames[idx]
         img_path = os.path.join(self.img_dir, fname)
         mask_path = os.path.join(self.mask_dir, fname)
 
         image = Image.open(img_path).convert("RGB")
         mask = Image.open(mask_path).convert("L")
+        
+        # Coherent Data Augmentation for image and mask
+        if random.random() > 0.5:
+            image = TF.hflip(image)
+            mask = TF.hflip(mask)
+            
+        angle = random.uniform(-10, 10)
+        translate_x = random.randint(-10, 10)
+        translate_y = random.randint(-10, 10)
+        image = TF.affine(image, angle=angle, translate=(translate_x, translate_y), scale=1.0, shear=0)
+        mask = TF.affine(mask, angle=angle, translate=(translate_x, translate_y), scale=1.0, shear=0)
 
         img_tensor = self.img_transform(image)    # (3, 256, 256)
         mask_tensor = self.mask_transform(mask)  # (1, 256, 256)
@@ -65,16 +79,21 @@ def train_guided_ldm(args):
     noise_scheduler = DDPMScheduler(num_train_timesteps=1000)
 
     print("--> Beginning U-Net (5 channels of input: 4 latents + 1 mask)...")
-    unet = UNet2DConditionModel(
-        sample_size=32,
-        in_channels=5,
-        out_channels=4,
-        layers_per_block=2,
-        block_out_channels=(128, 256, 512, 512),
-        down_block_types=("DownBlock2D", "DownBlock2D", "AttnDownBlock2D", "DownBlock2D"),
-        up_block_types=("UpBlock2D", "AttnUpBlock2D", "UpBlock2D", "UpBlock2D"),
-        cross_attention_dim=768 # Dummy encoder state dimension
-    )
+    if os.path.exists(os.path.join(args.output_dir, "config.json")):
+        print(f"--> Resuming from checkpoint: {args.output_dir}")
+        unet = UNet2DConditionModel.from_pretrained(args.output_dir)
+    else:
+        print("--> Initializing UNet from scratch")
+        unet = UNet2DConditionModel(
+            sample_size=32,
+            in_channels=5,
+            out_channels=4,
+            layers_per_block=2,
+            block_out_channels=(128, 256, 512, 512),
+            down_block_types=("DownBlock2D", "DownBlock2D", "AttnDownBlock2D", "DownBlock2D"),
+            up_block_types=("UpBlock2D", "AttnUpBlock2D", "UpBlock2D", "UpBlock2D"),
+            cross_attention_dim=768 # Dummy encoder state dimension
+        )
     unet.to(device)
 
     optimizer = torch.optim.AdamW(unet.parameters(), lr=args.lr)
@@ -114,7 +133,13 @@ def train_guided_ldm(args):
         avg_loss = epoch_loss / len(train_loader)
         if (epoch + 1) % 10 == 0 or epoch == 0:
             print(f"Epoca [{epoch+1}/{args.epochs}] - Loss: {avg_loss:.6f}")
+            
+        # Periodic saving
+        if (epoch + 1) % 50 == 0:
+            unet.save_pretrained(args.output_dir)
+            print(f"--> [Epoch {epoch+1}] Checkpoint saved in {args.output_dir}")
 
+    # Final save
     unet.save_pretrained(args.output_dir)
     print(f"--> Model saved with success in: {args.output_dir}")
 

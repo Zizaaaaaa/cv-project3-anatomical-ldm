@@ -14,7 +14,7 @@ from PIL import Image
 
 # This script is expected to be run from the repository root:
 # cv-project3-anatomical-ldm/
-DATASET_ROOT = Path("../upload_final/1_Experiment/standard_box/f0")
+DATASET_ROOT = Path("data/UPLOAD_FINAL/1_Experiment/standard_box/f0")
 
 # We intentionally use only the development split (f0/train + f0/val).
 # The strict holdout folder is never referenced by this script.

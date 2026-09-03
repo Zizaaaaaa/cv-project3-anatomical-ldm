@@ -11,11 +11,11 @@ from pathlib import Path
 # Configuration
 # ---------------------------------------------------------------------
 
-AUX_ROOT = Path("../upload_final/2_Auxiliary_Segmentation")
+AUX_ROOT = Path("data/UPLOAD_FINAL/2_Auxiliary_Segmentation")
 
-STANDARD_ROOT = Path("../upload_final/1_Experiment/standard_box/f0")
+STANDARD_ROOT = Path("data/UPLOAD_FINAL/1_Experiment/standard_box/f0")
 HOLDOUT_ROOT = Path(
-    "../upload_final/1_Experiment/holdout_test_standard_box"
+    "data/UPLOAD_FINAL/1_Experiment/holdout_test_standard_box"
 )
 
 OUTPUT_DIR = Path("outputs/anatomical_guidance")

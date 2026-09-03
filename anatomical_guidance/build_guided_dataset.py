@@ -18,11 +18,11 @@ from tooth_segmenter import SmallUNet
 # ---------------------------------------------------------------------
 
 STANDARD_ROOT = Path(
-    "../upload_final/1_Experiment/standard_box/f0"
+    "data/UPLOAD_FINAL/1_Experiment/standard_box/f0"
 )
 
 HOLDOUT_ROOT = Path(
-    "../upload_final/1_Experiment/holdout_test_standard_box"
+    "data/UPLOAD_FINAL/1_Experiment/holdout_test_standard_box"
 )
 
 SEVERE_ROOT = Path(

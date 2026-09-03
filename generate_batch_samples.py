@@ -23,30 +23,40 @@ def generate_batch(args):
 
     scheduler = DDPMScheduler(num_train_timesteps=1000)
 
-    # Identificazione della cartella delle maschere di input
-    mask_dir = os.path.join(args.dataset_path, "val", "masks")
-    if not os.path.exists(mask_dir) or len(os.listdir(mask_dir)) == 0:
-        mask_dir = os.path.join(args.dataset_path, "train", "masks")
-        
-    if not os.path.exists(mask_dir):
-        raise FileNotFoundError(f"Impossibile trovare le maschere di input in: {mask_dir}")
+    # Identificazione di TUTTE le maschere (train e val) per avere più variabilità
+    all_mask_files = []
+    for split in ["train", "val"]:
+        mdir = os.path.join(args.dataset_path, split, "masks")
+        if os.path.exists(mdir):
+            for f in os.listdir(mdir):
+                if f.endswith('.png'):
+                    all_mask_files.append(os.path.join(mdir, f))
+                    
+    if not all_mask_files:
+        raise FileNotFoundError(f"Nessuna maschera trovata in {args.dataset_path}")
 
-    mask_files = sorted([f for f in os.listdir(mask_dir) if f.endswith('.png')])[:args.num_samples]
-    
     os.makedirs(args.output_dir, exist_ok=True)
 
     transform_mask = T.Compose([T.ToTensor()])
     dummy_encoder_hidden_states = torch.zeros((1, 1, 768), device=device)
 
-    print(f"--> Inizio generazione di {len(mask_files)} radiografie sintetiche...")
+    import random
+    print(f"--> Trovate {len(all_mask_files)} maschere reali totali.")
+    print(f"--> Inizio generazione di {args.num_samples} radiografie sintetiche uniche...")
 
-    for idx, fname in enumerate(mask_files):
-        mask_path = os.path.join(mask_dir, fname)
+    for idx in range(args.num_samples):
+        # Scegli una maschera a caso per ogni generazione
+        mask_path = random.choice(all_mask_files)
+        fname = os.path.basename(mask_path)
+        
         mask_img = Image.open(mask_path).convert("L")
         
+        # Aggiungiamo una piccola data augmentation anche in inferenza sulla maschera? 
+        # (Opzionale: per ora teniamo la maschera reale per non alterare l'anatomia)
         mask_tensor = transform_mask(mask_img).unsqueeze(0).to(device)
         mask_32 = F.interpolate(mask_tensor, size=(32, 32), mode="nearest")
 
+        # Rumore sempre nuovo!
         latents = torch.randn((1, 4, 32, 32), device=device)
         scheduler.set_timesteps(args.num_inference_steps)
 
@@ -60,10 +70,12 @@ def generate_batch(args):
             decoded = (decoded / 2 + 0.5).clamp(0, 1)
 
         save_img = T.ToPILImage()(decoded.squeeze(0).cpu())
-        save_path = os.path.join(args.output_dir, f"synthetic_{fname}")
+        
+        # Nome univoco per non sovrascrivere!
+        save_path = os.path.join(args.output_dir, f"synthetic_{idx:03d}_{fname}")
         save_img.save(save_path)
 
-        print(f"[{idx+1}/{len(mask_files)}] Salvata: {save_path}")
+        print(f"[{idx+1}/{args.num_samples}] Salvata: {save_path}")
 
     print(f"\n Processo completato! Immagini salvate in: {args.output_dir}/")
 

@@ -109,7 +109,11 @@ def prepare_yolo_dataset(real_dataset_path, synthetic_dataset_path, output_dir, 
                 with open(dest_lbl_path, "w") as f:
                     f.write(formatted_lbl)
             else:
-                open(dest_lbl_path, "w").close()
+                # The synthetic patch is a crop of a tooth with context 1.25.
+                # So the tooth occupies 1/1.25 = 0.8 of the patch.
+                # Format: class_id x_center y_center width height
+                with open(dest_lbl_path, "w") as f:
+                    f.write("0 0.5 0.5 0.8 0.8\n")
 
     yaml_content = f"""
 path: {yolo_dir.absolute()}
@@ -189,9 +193,9 @@ def run_experiment(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--real_dataset_path", type=str, default="/content/drive/MyDrive/upload_final/1_Experiment/standard_box")
-    parser.add_argument("--synthetic_dataset_path", type=str, default="/content/generated_samples")
-    parser.add_argument("--output_dir", type=str, default="/content/outputs/yolo_experiments")
+    parser.add_argument("--real_dataset_path", type=str, default="data/UPLOAD_FINAL/1_Experiment/standard_box")
+    parser.add_argument("--synthetic_dataset_path", type=str, default="outputs/generated_samples")
+    parser.add_argument("--output_dir", type=str, default="outputs/yolo_experiments")
     parser.add_argument("--model_size", type=str, default="yolov8n.pt")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch_size", type=int, default=16)
